@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vòng Quay May Mắn</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="bg-decor" aria-hidden="true"></div>
+  <canvas id="confetti-canvas" aria-hidden="true"></canvas>
+
+  <div class="app-shell">
+    <header class="top-bar">
+      <div class="brand">
+        <div class="brand-badge" aria-hidden="true">
+          <svg viewBox="0 0 32 32" width="24" height="24" fill="none">
+            <path d="M16 2.5L19.6 10.6L28.5 11.5L21.8 17.5L23.7 26.2L16 21.7L8.3 26.2L10.2 17.5L3.5 11.5L12.4 10.6L16 2.5Z" fill="currentColor"/>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <h1>Vòng Quay May Mắn</h1>
+          <p class="subtitle">Quay số ngẫu nhiên - Trao quà vui vẻ</p>
+        </div>
+      </div>
+
+      <button type="button" id="sound-toggle" class="sound-btn" aria-pressed="true">
+        <svg class="sound-icon sound-icon-on" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+          <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+          <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+        </svg>
+        <svg class="sound-icon sound-icon-off" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+          <line x1="23" y1="9" x2="17" y2="15"></line>
+          <line x1="17" y1="9" x2="23" y2="15"></line>
+        </svg>
+        <span id="sound-label">Âm thanh: Bật</span>
+      </button>
+    </header>
+
+    <main class="main-grid">
+      <section class="card wheel-card" aria-label="Vòng quay">
+        <div class="stage-banner" id="stage-banner">
+          <div class="stage-info">
+            <span id="stage-badge" class="stage-badge is-people">Bước 1/2: Quay Chọn Người</span>
+            <span id="stage-player-info" class="stage-player-info" hidden>Người quay: <strong id="stage-player-name"></strong></span>
+          </div>
+          <button type="button" id="back-to-people-btn" class="btn-ghost stage-back-btn" hidden>Quay lại chọn người</button>
+        </div>
+
+        <div class="wheel-stage">
+          <div class="wheel-pointer" aria-hidden="true">
+            <svg viewBox="0 0 44 52" width="44" height="52" fill="none">
+              <path d="M22 50L5 18C2.5 13 6 4 13 4H31C38 4 41.5 13 39 18L22 50Z" fill="#D9232E" stroke="#FFF7E0" stroke-width="3"/>
+              <circle cx="22" cy="16" r="5" fill="#FFD166"/>
+            </svg>
+          </div>
+
+          <div class="wheel-frame">
+            <canvas id="wheel-canvas" width="460" height="460" aria-label="Vòng quay may mắn"></canvas>
+            <div id="wheel-hub" class="wheel-hub" aria-hidden="true">
+              <svg viewBox="0 0 36 36" width="28" height="28" fill="none">
+                <path d="M18 4L21.8 12.6L31 13.7L24.1 20.1L26 29.2L18 24.6L10 29.2L11.9 20.1L5 13.7L14.2 12.6L18 4Z" fill="#FFF7DF"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <div class="spin-controls">
+          <button type="button" id="spin-btn" class="btn-primary">
+            QUAY CHỌN NGƯỜI!
+          </button>
+
+          <p id="wheel-status-msg" class="wheel-status-msg" role="status" aria-live="polite" hidden></p>
+        </div>
+      </section>
+
+      <aside class="side-panel">
+        <section class="card people-card" aria-labelledby="people-heading">
+          <div class="card-header card-header-row">
+            <h2 id="people-heading">Danh Sách Người Tham Gia (1–50)</h2>
+            <span id="people-count" class="count-badge">5 / 50 người</span>
+          </div>
+
+          <form id="people-form" class="people-form" novalidate>
+            <label for="people-input" class="sr-only">Danh sách người tham gia, mỗi dòng một tên</label>
+            <textarea
+              id="people-input"
+              class="people-textarea"
+              rows="5"
+              placeholder="Nhập mỗi tên trên 1 dòng (từ 1 đến 50 người)..."
+            >Bạn 1
+Bạn 2
+Bạn 3
+Bạn 4
+Bạn 5</textarea>
+
+            <label class="checkbox-row" for="remove-picked-toggle">
+              <input type="checkbox" id="remove-picked-toggle" checked />
+              <span>Loại người đã quay xong khỏi vòng chọn</span>
+            </label>
+
+            <div class="people-actions">
+              <button type="submit" id="save-people-btn" class="btn-secondary">Lưu danh sách</button>
+              <button type="button" id="reset-people-btn" class="btn-ghost">Đặt lại vòng người</button>
+            </div>
+            <span id="people-feedback" class="feedback-text" role="status" aria-live="polite"></span>
+          </form>
+        </section>
+
+        <section class="card gifts-card" aria-labelledby="gifts-heading">
+          <div class="card-header">
+            <h2 id="gifts-heading">Danh Sách 5 Phần Quà</h2>
+          </div>
+
+          <form id="gifts-form" class="gifts-form" novalidate>
+            <div class="gift-rows" id="gift-rows">
+              <div class="gift-row">
+                <span class="gift-swatch" style="--swatch: #E63946;">1</span>
+                <input type="text" class="gift-input" data-index="0" value="Quà Đặc Biệt" maxlength="40" aria-label="Phần quà 1" />
+              </div>
+              <div class="gift-row">
+                <span class="gift-swatch" style="--swatch: #F4A261;">2</span>
+                <input type="text" class="gift-input" data-index="1" value="Quà Hạng Nhất" maxlength="40" aria-label="Phần quà 2" />
+              </div>
+              <div class="gift-row">
+                <span class="gift-swatch" style="--swatch: #2A9D8F;">3</span>
+                <input type="text" class="gift-input" data-index="2" value="Quà May Mắn" maxlength="40" aria-label="Phần quà 3" />
+              </div>
+              <div class="gift-row">
+                <span class="gift-swatch" style="--swatch: #457B9D;">4</span>
+                <input type="text" class="gift-input" data-index="3" value="Quà Bất Ngờ" maxlength="40" aria-label="Phần quà 4" />
+              </div>
+              <div class="gift-row">
+                <span class="gift-swatch" style="--swatch: #9B5DE5;">5</span>
+                <input type="text" class="gift-input" data-index="4" value="Quà Khích Lệ" maxlength="40" aria-label="Phần quà 5" />
+              </div>
+            </div>
+
+            <div class="gifts-actions">
+              <button type="submit" id="save-gifts-btn" class="btn-secondary">Lưu danh sách</button>
+              <span id="gifts-feedback" class="feedback-text" role="status" aria-live="polite"></span>
+            </div>
+          </form>
+        </section>
+
+        <section class="card history-card" aria-labelledby="history-heading">
+          <div class="card-header card-header-row">
+            <h2 id="history-heading">Lịch Sử Trao Quà</h2>
+            <button type="button" id="clear-history-btn" class="btn-ghost">Xóa lịch sử</button>
+          </div>
+
+          <div id="history-list" class="history-list" aria-live="polite">
+            <p class="history-empty">Chưa có lượt quay nào.</p>
+          </div>
+        </section>
+      </aside>
+    </main>
+
+    <footer class="app-footer">
+      <p>© 2026 Vòng Quay May Mắn</p>
+    </footer>
+  </div>
+
+  <div id="picked-modal" class="modal-backdrop" hidden role="dialog" aria-modal="true" aria-labelledby="picked-title">
+    <div class="modal-card picked-modal-card">
+      <div class="win-badge" aria-hidden="true">🎯</div>
+      <h2 id="picked-title" class="win-title">Đã Chọn Người Quay!</h2>
+      <div class="win-prize-box picked-person-box">
+        <span class="win-prize-label">Người được chọn</span>
+        <strong id="picked-name" class="win-prize-name"></strong>
+      </div>
+      <div class="picked-modal-actions">
+        <button type="button" id="proceed-gift-btn" class="btn-primary win-close-btn">Sang vòng quay quà!</button>
+        <button type="button" id="cancel-picked-btn" class="btn-ghost picked-cancel-btn">Quay lại</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="win-modal" class="modal-backdrop" hidden role="dialog" aria-modal="true" aria-labelledby="win-title">
+    <div class="modal-card win-modal-card">
+      <div class="win-badge" aria-hidden="true">🎉</div>
+      <h2 id="win-title" class="win-title">Chúc Mừng!</h2>
+      <p id="win-player" class="win-player"></p>
+      <div class="win-prize-box">
+        <span class="win-prize-label">Phần quà nhận được</span>
+        <strong id="win-prize" class="win-prize-name"></strong>
+      </div>
+      <button type="button" id="close-win-modal" class="btn-primary win-close-btn">Tuyệt vời!</button>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

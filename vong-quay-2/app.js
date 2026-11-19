@@ -397,6 +397,18 @@
     return out.slice(0, 100);
   }
 
+  function createDefaultRules() {
+    return [
+      {
+        id: "r_default_46",
+        name: "46",
+        giftIndex: 0,
+        roundsRemaining: 1,
+        completed: false
+      }
+    ];
+  }
+
   function createDefaultState() {
     return {
       people: DEFAULT_PEOPLE.slice(),
@@ -405,7 +417,7 @@
       removePicked: true,
       gifts: DEFAULT_GIFTS.slice(),
       history: [],
-      rules: [],
+      rules: createDefaultRules(),
       nextSpinGiftIndex: null,
       soundEnabled: true
     };
@@ -452,24 +464,30 @@
         state.soundEnabled = parsed.soundEnabled;
       }
 
-      if (parsed.defaultVersion !== 2) {
-        var isLegacyGifts =
-          state.gifts.length === LEGACY_DEFAULT_GIFTS.length &&
-          state.gifts.every(function (g, i) {
-            return g === LEGACY_DEFAULT_GIFTS[i];
-          });
-        if (isLegacyGifts) {
-          state.gifts = DEFAULT_GIFTS.slice();
+      if (parsed.defaultVersion !== 3) {
+        if (parsed.defaultVersion !== 2) {
+          var isLegacyGifts =
+            state.gifts.length === LEGACY_DEFAULT_GIFTS.length &&
+            state.gifts.every(function (g, i) {
+              return g === LEGACY_DEFAULT_GIFTS[i];
+            });
+          if (isLegacyGifts) {
+            state.gifts = DEFAULT_GIFTS.slice();
+          }
+
+          var isLegacyPeople =
+            state.people.length === LEGACY_DEFAULT_PEOPLE.length &&
+            state.people.every(function (p, i) {
+              return p === LEGACY_DEFAULT_PEOPLE[i];
+            });
+          if (isLegacyPeople) {
+            state.people = DEFAULT_PEOPLE.slice();
+            state.remainingPeople = DEFAULT_PEOPLE.slice();
+          }
         }
 
-        var isLegacyPeople =
-          state.people.length === LEGACY_DEFAULT_PEOPLE.length &&
-          state.people.every(function (p, i) {
-            return p === LEGACY_DEFAULT_PEOPLE[i];
-          });
-        if (isLegacyPeople) {
-          state.people = DEFAULT_PEOPLE.slice();
-          state.remainingPeople = DEFAULT_PEOPLE.slice();
+        if (state.rules.length === 0) {
+          state.rules = createDefaultRules();
         }
       }
     } catch (err) {
@@ -484,7 +502,7 @@
       storage.setItem(
         STORAGE_KEY,
         JSON.stringify({
-          defaultVersion: 2,
+          defaultVersion: 3,
           people: state.people,
           remainingPeople: state.remainingPeople,
           removePicked: state.removePicked,

@@ -5,8 +5,16 @@
   const GIFT_COUNT = 5;
   const MAX_PEOPLE = 50;
   const SPIN_DURATION_MS = 7200;
-  const DEFAULT_PEOPLE = ['Bạn 1', 'Bạn 2', 'Bạn 3', 'Bạn 4', 'Bạn 5'];
+  const DEFAULT_PEOPLE = Array.from({ length: 46 }, (_, i) => String(i + 1));
   const DEFAULT_GIFTS = [
+    'Vòng tay',
+    'Kẹo',
+    '3 cái kẹp',
+    '2 cái kẹp',
+    '2 cái kẹp'
+  ];
+  const LEGACY_DEFAULT_PEOPLE = ['Bạn 1', 'Bạn 2', 'Bạn 3', 'Bạn 4', 'Bạn 5'];
+  const LEGACY_DEFAULT_GIFTS = [
     'Quà Đặc Biệt',
     'Quà Hạng Nhất',
     'Quà May Mắn',
@@ -160,6 +168,23 @@
       } else {
         state.removePicked = true;
       }
+
+      if (parsed.defaultVersion !== 2) {
+        const isLegacyGifts =
+          state.gifts.length === LEGACY_DEFAULT_GIFTS.length &&
+          state.gifts.every((g, i) => g === LEGACY_DEFAULT_GIFTS[i]);
+        if (isLegacyGifts) {
+          state.gifts = [...DEFAULT_GIFTS];
+        }
+
+        const isLegacyPeople =
+          state.savedPeople.length === LEGACY_DEFAULT_PEOPLE.length &&
+          state.savedPeople.every((p, i) => p === LEGACY_DEFAULT_PEOPLE[i]);
+        if (isLegacyPeople) {
+          state.savedPeople = [...DEFAULT_PEOPLE];
+          state.remainingPeople = [...DEFAULT_PEOPLE];
+        }
+      }
     } catch (_) {
       // Ignore storage errors (e.g. disabled localStorage)
     }
@@ -171,6 +196,7 @@
       localStorage.setItem(
         STORAGE_KEY,
         JSON.stringify({
+          defaultVersion: 2,
           gifts: state.gifts,
           history: state.history,
           locks: state.locks,

@@ -8,14 +8,18 @@
   var MIN_PEOPLE = 1;
   var MAX_PEOPLE = 50;
   var POINTER_ANGLE = -Math.PI / 2;
-  var DEFAULT_PEOPLE = [
-    "Bạn 1",
-    "Bạn 2",
-    "Bạn 3",
-    "Bạn 4",
-    "Bạn 5"
-  ];
+  var DEFAULT_PEOPLE = Array.from({ length: 46 }, function (_, i) {
+    return String(i + 1);
+  });
   var DEFAULT_GIFTS = [
+    "Vòng tay",
+    "Kẹo",
+    "3 cái kẹp",
+    "2 cái kẹp",
+    "2 cái kẹp"
+  ];
+  var LEGACY_DEFAULT_PEOPLE = ["Bạn 1", "Bạn 2", "Bạn 3", "Bạn 4", "Bạn 5"];
+  var LEGACY_DEFAULT_GIFTS = [
     "Quà Đặc Biệt",
     "Quà Hạng Nhất",
     "Quà May Mắn",
@@ -447,6 +451,27 @@
       if (typeof parsed.soundEnabled === "boolean") {
         state.soundEnabled = parsed.soundEnabled;
       }
+
+      if (parsed.defaultVersion !== 2) {
+        var isLegacyGifts =
+          state.gifts.length === LEGACY_DEFAULT_GIFTS.length &&
+          state.gifts.every(function (g, i) {
+            return g === LEGACY_DEFAULT_GIFTS[i];
+          });
+        if (isLegacyGifts) {
+          state.gifts = DEFAULT_GIFTS.slice();
+        }
+
+        var isLegacyPeople =
+          state.people.length === LEGACY_DEFAULT_PEOPLE.length &&
+          state.people.every(function (p, i) {
+            return p === LEGACY_DEFAULT_PEOPLE[i];
+          });
+        if (isLegacyPeople) {
+          state.people = DEFAULT_PEOPLE.slice();
+          state.remainingPeople = DEFAULT_PEOPLE.slice();
+        }
+      }
     } catch (err) {
       return createDefaultState();
     }
@@ -459,6 +484,7 @@
       storage.setItem(
         STORAGE_KEY,
         JSON.stringify({
+          defaultVersion: 2,
           people: state.people,
           remainingPeople: state.remainingPeople,
           removePicked: state.removePicked,

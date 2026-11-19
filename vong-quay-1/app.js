@@ -42,7 +42,7 @@
   const state = {
     gifts: [...DEFAULT_GIFTS],
     history: [],
-    locks: [false, false, false, false, false],
+    locks: [true, false, false, false, false],
     soundEnabled: true,
     savedPeople: [...DEFAULT_PEOPLE],
     remainingPeople: [...DEFAULT_PEOPLE],
@@ -169,20 +169,26 @@
         state.removePicked = true;
       }
 
-      if (parsed.defaultVersion !== 2) {
-        const isLegacyGifts =
-          state.gifts.length === LEGACY_DEFAULT_GIFTS.length &&
-          state.gifts.every((g, i) => g === LEGACY_DEFAULT_GIFTS[i]);
-        if (isLegacyGifts) {
-          state.gifts = [...DEFAULT_GIFTS];
+      if (parsed.defaultVersion !== 3) {
+        if (parsed.defaultVersion !== 2) {
+          const isLegacyGifts =
+            state.gifts.length === LEGACY_DEFAULT_GIFTS.length &&
+            state.gifts.every((g, i) => g === LEGACY_DEFAULT_GIFTS[i]);
+          if (isLegacyGifts) {
+            state.gifts = [...DEFAULT_GIFTS];
+          }
+
+          const isLegacyPeople =
+            state.savedPeople.length === LEGACY_DEFAULT_PEOPLE.length &&
+            state.savedPeople.every((p, i) => p === LEGACY_DEFAULT_PEOPLE[i]);
+          if (isLegacyPeople) {
+            state.savedPeople = [...DEFAULT_PEOPLE];
+            state.remainingPeople = [...DEFAULT_PEOPLE];
+          }
         }
 
-        const isLegacyPeople =
-          state.savedPeople.length === LEGACY_DEFAULT_PEOPLE.length &&
-          state.savedPeople.every((p, i) => p === LEGACY_DEFAULT_PEOPLE[i]);
-        if (isLegacyPeople) {
-          state.savedPeople = [...DEFAULT_PEOPLE];
-          state.remainingPeople = [...DEFAULT_PEOPLE];
+        if (state.locks.every((locked) => !locked)) {
+          state.locks[0] = true;
         }
       }
     } catch (_) {
@@ -196,7 +202,7 @@
       localStorage.setItem(
         STORAGE_KEY,
         JSON.stringify({
-          defaultVersion: 2,
+          defaultVersion: 3,
           gifts: state.gifts,
           history: state.history,
           locks: state.locks,

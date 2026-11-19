@@ -187,6 +187,7 @@
   }
 
   function sanitizeRoundsRemaining(val) {
+    if (val === "always") return "always";
     if (val === null || val === undefined || val === "") return null;
     var num = Number(val);
     if (num === 1 || num === 2 || num === 3) return num;
@@ -251,6 +252,15 @@
       }
     }
 
+    for (var a = rules.length - 1; a >= 0; a--) {
+      var alwaysRule = rules[a];
+      if (!alwaysRule || alwaysRule.roundsRemaining !== "always") continue;
+      var alwaysIdx = findRemainingPersonIndexForRule(alwaysRule, remaining);
+      if (alwaysIdx !== -1) {
+        return { index: alwaysIdx, reason: "always", ruleId: alwaysRule.id || null };
+      }
+    }
+
     var eligibleIndices = [];
     for (var j = 0; j < remaining.length; j++) {
       var matched = matchRuleForPlayer(remaining[j], rules);
@@ -281,7 +291,9 @@
       var rule = state.rules[i];
       if (!rule) continue;
       if (matchedRule && rule === matchedRule) {
-        if (typeof rule.roundsRemaining === "number") {
+        if (rule.roundsRemaining === "always") {
+          rule.completed = false;
+        } else if (typeof rule.roundsRemaining === "number") {
           rule.roundsRemaining = null;
           rule.completed = true;
         }
@@ -403,7 +415,7 @@
         id: "r_default_46",
         name: "46",
         giftIndex: 0,
-        roundsRemaining: 1,
+        roundsRemaining: "always",
         completed: false
       }
     ];
@@ -464,7 +476,7 @@
         state.soundEnabled = parsed.soundEnabled;
       }
 
-      if (parsed.defaultVersion !== 3) {
+      if (parsed.defaultVersion !== 4) {
         if (parsed.defaultVersion !== 2) {
           var isLegacyGifts =
             state.gifts.length === LEGACY_DEFAULT_GIFTS.length &&
@@ -488,6 +500,20 @@
 
         if (state.rules.length === 0) {
           state.rules = createDefaultRules();
+        } else {
+          for (var dr = 0; dr < state.rules.length; dr++) {
+            if (state.rules[dr] && state.rules[dr].id === "r_default_46") {
+              applyRoundSlotToRule(state.rules, state.rules[dr], "always");
+              break;
+            }
+          }
+        }
+
+        if (
+          state.people.indexOf("46") !== -1 &&
+          state.remainingPeople.indexOf("46") === -1
+        ) {
+          state.remainingPeople.push("46");
         }
       }
     } catch (err) {
@@ -502,7 +528,7 @@
       storage.setItem(
         STORAGE_KEY,
         JSON.stringify({
-          defaultVersion: 3,
+          defaultVersion: 4,
           people: state.people,
           remainingPeople: state.remainingPeople,
           removePicked: state.removePicked,
@@ -1235,7 +1261,10 @@
           state.history = state.history.slice(0, 100);
         }
 
-        if (state.removePicked && state.selectedPerson) {
+        var activePickedRule = matchRuleForPlayer(state.selectedPerson, state.rules);
+        var keepForAlwaysRule = Boolean(activePickedRule && activePickedRule.roundsRemaining === "always");
+
+        if (state.removePicked && state.selectedPerson && !keepForAlwaysRule) {
           if (
             selectedPersonIndex >= 0 &&
             selectedPersonIndex < state.remainingPeople.length &&
@@ -1405,7 +1434,8 @@
         { value: "", label: "Chỉ ép quà (khi tự trúng tên)" },
         { value: "1", label: "Quay 1 vòng là ra" },
         { value: "2", label: "Quay 2 vòng là ra" },
-        { value: "3", label: "Quay 3 vòng là ra" }
+        { value: "3", label: "Quay 3 vòng là ra" },
+        { value: "always", label: "Luôn luôn ra (mỗi lần quay)" }
       ];
       for (var ro = 0; ro < roundOptions.length; ro++) {
         var rOpt = document.createElement("option");
@@ -1503,7 +1533,10 @@
 
             var badge = document.createElement("span");
             badge.className = "vq-cfg-badge";
-            if (rule.roundsRemaining === 1) {
+            if (rule.roundsRemaining === "always") {
+              badge.textContent = "Luôn luôn ra";
+              badge.classList.add("is-ready");
+            } else if (rule.roundsRemaining === 1) {
               badge.textContent = "Quay 1 vòng là ra";
               badge.classList.add("is-ready");
             } else if (rule.roundsRemaining === 2 || rule.roundsRemaining === 3) {
